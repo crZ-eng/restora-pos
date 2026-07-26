@@ -1,70 +1,52 @@
 import {
-
-TableRow,
-TableCell,
-Chip,
-IconButton
-
+    TableRow,
+    TableCell,
+    IconButton
 } from "@mui/material";
 
 import EditIcon from "@mui/icons-material/Edit";
-
 import DeleteIcon from "@mui/icons-material/Delete";
 
-export default function ProductRow({producto}){
+export default function ProductRow({
+    producto,
+    onEdit,
+    onDelete
+}) {
 
-return(
+    return (
 
-<TableRow hover>
+        <TableRow>
 
-<TableCell>
+            <TableCell>{producto.id}</TableCell>
 
-{producto.nombre}
+            <TableCell>{producto.nombre}</TableCell>
 
-</TableCell>
+            <TableCell>{producto.categoria}</TableCell>
 
-<TableCell>
+            <TableCell>${producto.precio}</TableCell>
 
-<Chip
+            <TableCell>{producto.stock}</TableCell>
 
-label={producto.categoria}
+            <TableCell>
 
-color="primary"
+                <IconButton
+                    color="primary"
+                    onClick={() => onEdit(producto)}
+                >
+                    <EditIcon />
+                </IconButton>
 
-/>
+                <IconButton
+                    color="error"
+                    onClick={() => onDelete(producto.id)}
+                >
+                    <DeleteIcon />
+                </IconButton>
 
-</TableCell>
+            </TableCell>
 
-<TableCell>
+        </TableRow>
 
-${producto.precio.toLocaleString("es-CO")}
-
-</TableCell>
-
-<TableCell>
-
-{producto.stock}
-
-</TableCell>
-
-<TableCell align="center">
-
-<IconButton>
-
-<EditIcon color="warning"/>
-
-</IconButton>
-
-<IconButton>
-
-<DeleteIcon color="error"/>
-
-</IconButton>
-
-</TableCell>
-
-</TableRow>
-
-);
+    );
 
 }

@@ -14,6 +14,9 @@ import {
 } from "@mui/material";
 import { Box } from "@mui/material";
 import { useState } from "react";
+import ProductImage from "./ProductImage";
+import ProductExtras from "./ProductExtras";
+import { createProducto } from "../../services/productService";
 
 export default function ProductModal({
     open,
@@ -23,6 +26,49 @@ export default function ProductModal({
     const [requiereTermino, setRequiereTermino] = useState(false);
     const [permiteObservaciones, setPermiteObservaciones] = useState(false);
     const [imagen, setImagen] = useState(null);
+
+    const [nombre, setNombre] = useState("");
+    const [descripcion, setDescripcion] = useState("");
+    const [categoria, setCategoria] = useState("");
+    const [precio, setPrecio] = useState("");
+    const [stock, setStock] = useState("");
+
+
+    const guardarProducto = async () => {
+
+        try {
+
+            await createProducto({
+
+                nombre,
+                descripcion,
+                categoria,
+                precio,
+                stock,
+
+                tiempo_preparacion: 15,
+
+                requiere_termino: requiereTermino,
+
+                permite_observaciones: permiteObservaciones,
+
+                disponible: true
+
+            });
+
+            alert("Producto creado correctamente");
+
+            handleClose();
+
+        } catch (error) {
+
+            console.error(error);
+
+            alert("Error al guardar");
+
+        }
+
+    };
 
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
@@ -36,19 +82,20 @@ export default function ProductModal({
             <DialogContent>
 
                 <Grid container spacing={2} mt={1}>
-
-                    <Grid size={{ xs: 12, md: 6 }}>
-                        <TextField
-                            label="Nombre"
-                            fullWidth
-                        />
-                    </Grid>
+                    <TextField
+                        label="Nombre"
+                        fullWidth
+                        value={nombre}
+                        onChange={(e) => setNombre(e.target.value)}
+                    />
 
                     <Grid size={{ xs: 12, md: 6 }}>
                         <TextField
                             select
                             label="Categoría"
                             fullWidth
+                            value={categoria}
+                            onChange={(e) => setCategoria(e.target.value)}
                         >
                             <MenuItem value="Carnes">Carnes</MenuItem>
                             <MenuItem value="Hamburguesas">Hamburguesas</MenuItem>
@@ -62,6 +109,8 @@ export default function ProductModal({
                             label="Precio"
                             type="number"
                             fullWidth
+                            value={precio}
+                            onChange={(e) => setPrecio(e.target.value)}
                         />
                     </Grid>
 
@@ -70,6 +119,8 @@ export default function ProductModal({
                             label="Stock"
                             type="number"
                             fullWidth
+                            value={stock}
+                            onChange={(e) => setStock(e.target.value)}
                         />
                     </Grid>
 
@@ -87,6 +138,8 @@ export default function ProductModal({
                             rows={4}
                             label="Descripción"
                             fullWidth
+                            value={descripcion}
+                            onChange={(e) => setDescripcion(e.target.value)}
                         />
                     </Grid>
                     <Divider sx={{ my: 2 }} />
@@ -140,23 +193,14 @@ export default function ProductModal({
 
                         </Box>
 
-                        <Button
-                            component="label"
-                            variant="outlined"
-                        >
 
                             Seleccionar Imagen
 
-                            <input
-                                hidden
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) =>
-                                    setImagen(e.target.files[0])
-                                }
+                            <ProductImage
+                                imagen={imagen}
+                                setImagen={setImagen}
                             />
 
-                        </Button>
 
                     </Grid>
 
@@ -252,13 +296,17 @@ Poco picante`}
 
             </DialogContent>
 
+            <ProductExtras />
+
             <DialogActions>
 
                 <Button onClick={handleClose}>
                     Cancelar
                 </Button>
-
-                <Button variant="contained">
+                <Button
+                    variant="contained"
+                    onClick={guardarProducto}
+                >
                     Guardar
                 </Button>
 

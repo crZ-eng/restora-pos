@@ -1,105 +1,101 @@
 import {
-
-Table,
-TableBody,
-TableCell,
-TableContainer,
-TableHead,
-TableRow,
-Paper
-
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    IconButton,
 } from "@mui/material";
 
-import ProductRow from "./ProductRow";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 
-const productos=[
+export default function ProductTable({
+    productos,
+    onEdit,
+    onDelete,
+}) {
+    return (
+        <TableContainer component={Paper}>
 
-{
+            <Table>
 
-id:1,
-nombre:"Hamburguesa Clásica",
-categoria:"Hamburguesas",
-precio:18000,
-stock:25
+                <TableHead>
 
-},
+                    <TableRow>
 
-{
+                        <TableCell>ID</TableCell>
 
-id:2,
-nombre:"Lomo a la Parrilla",
-categoria:"Carnes",
-precio:42000,
-stock:12
+                        <TableCell>Nombre</TableCell>
 
-},
+                        <TableCell>Categoría</TableCell>
 
-{
+                        <TableCell>Precio</TableCell>
 
-id:3,
-nombre:"Pasta Alfredo",
-categoria:"Pastas",
-precio:27000,
-stock:8
+                        <TableCell>Stock</TableCell>
 
-}
+                        <TableCell align="center">
+                            Acciones
+                        </TableCell>
 
-];
+                    </TableRow>
 
-export default function ProductTable(){
+                </TableHead>
 
-return(
+                <TableBody>
 
-<TableContainer component={Paper}>
+                    {productos.map((producto) => (
 
-<Table>
+                        <TableRow key={producto.id}>
 
-<TableHead>
+                            <TableCell>
+                                {producto.id}
+                            </TableCell>
 
-<TableRow>
+                            <TableCell>
+                                {producto.nombre}
+                            </TableCell>
 
-<TableCell>Producto</TableCell>
+                            <TableCell>
+                                {producto.categoria}
+                            </TableCell>
 
-<TableCell>Categoría</TableCell>
+                            <TableCell>
+                                ${producto.precio}
+                            </TableCell>
 
-<TableCell>Precio</TableCell>
+                            <TableCell>
+                                {producto.stock}
+                            </TableCell>
 
-<TableCell>Stock</TableCell>
+                            <TableCell align="center">
 
-<TableCell align="center">
+                                <IconButton
+                                    color="primary"
+                                    onClick={() => onEdit(producto)}
+                                >
+                                    <EditIcon />
+                                </IconButton>
 
-Acciones
+                                <IconButton
+                                    color="error"
+                                    onClick={() => onDelete(producto.id)}
+                                >
+                                    <DeleteIcon />
+                                </IconButton>
 
-</TableCell>
+                            </TableCell>
 
-</TableRow>
+                        </TableRow>
 
-</TableHead>
+                    ))}
 
-<TableBody>
+                </TableBody>
 
-{
+            </Table>
 
-productos.map(producto=>(
-
-<ProductRow
-
-key={producto.id}
-
-producto={producto}
-
-/>
-
-))
-
-}
-
-</TableBody>
-
-</Table>
-
-</TableContainer>
-
-);
-
+        </TableContainer>
+    );
 }
