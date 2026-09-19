@@ -1,4 +1,6 @@
+
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class Producto(models.Model):
@@ -9,6 +11,14 @@ class Producto(models.Model):
         ("Pastas", "Pastas"),
         ("Bebidas", "Bebidas"),
     ]
+
+    administrador = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="productos",
+        null=True,
+        blank=True
+    )
 
     nombre = models.CharField(max_length=150)
 
