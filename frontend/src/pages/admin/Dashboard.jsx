@@ -19,6 +19,7 @@ import ShoppingBasketIcon from "@mui/icons-material/ShoppingBasket";
 import SalesChart from "../../components/cards/SalesChart";
 import RecentOrders from "../../components/cards/RecentOrders";
 
+
 // ---------------------------------------------------------------------------
 // Rediseño completo: "tablero de operación en vivo", inspirado en las
 // pantallas de expedición de cocina (KDS) — fondo oscuro tipo acero,

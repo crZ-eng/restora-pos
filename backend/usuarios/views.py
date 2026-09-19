@@ -1,3 +1,4 @@
+
 import secrets
 import string
 
@@ -23,7 +24,7 @@ def generar_codigo():
 
         codigo = "".join(
             secrets.choice(caracteres)
-            for _ in range(4)
+            for _ in range(6)
         )
 
         if not Mesero.objects.filter(codigo=codigo).exists():
@@ -40,6 +41,10 @@ def generar_tokens(usuario):
     }
 
 
+# ============================================================
+# REGISTRO ADMINISTRADOR
+# ============================================================
+
 class RegistroAdministradorView(APIView):
 
     permission_classes = [AllowAny]
@@ -51,6 +56,7 @@ class RegistroAdministradorView(APIView):
         password_confirm = request.data.get("password_confirm")
 
         if not username or not password:
+
             return Response(
                 {
                     "error": "Usuario y contraseña son obligatorios."
@@ -59,6 +65,7 @@ class RegistroAdministradorView(APIView):
             )
 
         if password != password_confirm:
+
             return Response(
                 {
                     "error": "Las contraseñas no coinciden."
@@ -67,6 +74,7 @@ class RegistroAdministradorView(APIView):
             )
 
         if User.objects.filter(username=username).exists():
+
             return Response(
                 {
                     "error": "Ese usuario ya existe."
@@ -96,6 +104,10 @@ class RegistroAdministradorView(APIView):
         )
 
 
+# ============================================================
+# LOGIN ADMINISTRADOR
+# ============================================================
+
 class LoginView(APIView):
 
     permission_classes = [AllowAny]
@@ -111,11 +123,21 @@ class LoginView(APIView):
         )
 
         if usuario is None:
+
             return Response(
                 {
                     "error": "Usuario o contraseña incorrectos."
                 },
                 status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        if not usuario.is_staff:
+
+            return Response(
+                {
+                    "error": "Este usuario no es un administrador."
+                },
+                status=status.HTTP_403_FORBIDDEN
             )
 
         tokens = generar_tokens(usuario)
@@ -126,9 +148,14 @@ class LoginView(APIView):
                 "usuario": usuario.username,
                 "rol": "administrador",
                 **tokens
-            }
+            },
+            status=status.HTTP_200_OK
         )
 
+
+# ============================================================
+# CREAR MESERO
+# ============================================================
 
 class CrearMeseroView(APIView):
 
@@ -137,6 +164,7 @@ class CrearMeseroView(APIView):
     def post(self, request):
 
         if not request.user.is_staff:
+
             return Response(
                 {
                     "error": "No tienes permisos para crear meseros."
@@ -147,6 +175,7 @@ class CrearMeseroView(APIView):
         nombre = request.data.get("nombre")
 
         if not nombre or not nombre.strip():
+
             return Response(
                 {
                     "error": "El nombre es obligatorio."
@@ -166,6 +195,7 @@ class CrearMeseroView(APIView):
         usuario.save()
 
         mesero = Mesero.objects.create(
+            administrador=request.user,
             usuario=usuario,
             nombre=nombre.strip(),
             codigo=codigo
@@ -180,6 +210,10 @@ class CrearMeseroView(APIView):
         )
 
 
+# ============================================================
+# LISTAR MESEROS DEL ADMINISTRADOR ACTUAL
+# ============================================================
+
 class ListaMeserosView(APIView):
 
     permission_classes = [IsAuthenticated]
@@ -187,6 +221,7 @@ class ListaMeserosView(APIView):
     def get(self, request):
 
         if not request.user.is_staff:
+
             return Response(
                 {
                     "error": "No tienes permisos para ver los meseros."
@@ -194,15 +229,24 @@ class ListaMeserosView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        meseros = Mesero.objects.all().order_by("-creado")
+        meseros = Mesero.objects.filter(
+            administrador=request.user
+        ).order_by("-creado")
 
         serializer = MeseroSerializer(
             meseros,
             many=True
         )
 
-        return Response(serializer.data)
+        return Response(
+            serializer.data,
+            status=status.HTTP_200_OK
+        )
 
+
+# ============================================================
+# EDITAR / ELIMINAR MESERO
+# ============================================================
 
 class DetalleMeseroView(APIView):
 
@@ -211,6 +255,7 @@ class DetalleMeseroView(APIView):
     def put(self, request, id):
 
         if not request.user.is_staff:
+
             return Response(
                 {
                     "error": "No tienes permisos para editar meseros."
@@ -219,9 +264,14 @@ class DetalleMeseroView(APIView):
             )
 
         try:
-            mesero = Mesero.objects.get(id=id)
+
+            mesero = Mesero.objects.get(
+                id=id,
+                administrador=request.user
+            )
 
         except Mesero.DoesNotExist:
+
             return Response(
                 {
                     "error": "Mesero no encontrado."
@@ -232,6 +282,7 @@ class DetalleMeseroView(APIView):
         nombre = request.data.get("nombre")
 
         if not nombre or not nombre.strip():
+
             return Response(
                 {
                     "error": "El nombre es obligatorio."
@@ -246,12 +297,14 @@ class DetalleMeseroView(APIView):
             {
                 "mensaje": "Mesero actualizado correctamente.",
                 "mesero": MeseroSerializer(mesero).data
-            }
+            },
+            status=status.HTTP_200_OK
         )
 
     def delete(self, request, id):
 
         if not request.user.is_staff:
+
             return Response(
                 {
                     "error": "No tienes permisos para eliminar meseros."
@@ -260,9 +313,14 @@ class DetalleMeseroView(APIView):
             )
 
         try:
-            mesero = Mesero.objects.get(id=id)
+
+            mesero = Mesero.objects.get(
+                id=id,
+                administrador=request.user
+            )
 
         except Mesero.DoesNotExist:
+
             return Response(
                 {
                     "error": "Mesero no encontrado."
@@ -270,18 +328,16 @@ class DetalleMeseroView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        usuario = mesero.usuario
-
         mesero.delete()
-        usuario.delete()
 
         return Response(
-            {
-                "mensaje": "Mesero eliminado correctamente."
-            },
             status=status.HTTP_204_NO_CONTENT
         )
 
+
+# ============================================================
+# LOGIN MESERO
+# ============================================================
 
 class LoginMeseroView(APIView):
 
@@ -292,6 +348,7 @@ class LoginMeseroView(APIView):
         codigo = request.data.get("codigo")
 
         if not codigo:
+
             return Response(
                 {
                     "error": "El código es obligatorio."
@@ -315,7 +372,9 @@ class LoginMeseroView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
-        tokens = generar_tokens(mesero.usuario)
+        tokens = generar_tokens(
+            mesero.usuario
+        )
 
         return Response(
             {
@@ -324,5 +383,7 @@ class LoginMeseroView(APIView):
                 "rol": "mesero",
                 "codigo": mesero.codigo,
                 **tokens
-            }
+            },
+            status=status.HTTP_200_OK
         )
+
