@@ -26,7 +26,7 @@ export default function ProductTable({
 
                     <TableRow>
 
-                        <TableCell>ID</TableCell>
+                        
 
                         <TableCell>Nombre</TableCell>
 
@@ -50,9 +50,7 @@ export default function ProductTable({
 
                         <TableRow key={producto.id}>
 
-                            <TableCell>
-                                {producto.id}
-                            </TableCell>
+        
 
                             <TableCell>
                                 {producto.nombre}

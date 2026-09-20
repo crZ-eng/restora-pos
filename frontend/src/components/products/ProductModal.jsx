@@ -13,15 +13,41 @@ import {
     Typography,
 } from "@mui/material";
 import { Box } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ProductImage from "./ProductImage";
 import ProductExtras from "./ProductExtras";
-import { createProducto } from "../../services/productService";
+import { createProducto, updateProducto } from "../../services/productService";
+
+// -----------------------------------------------------------------------
+// NOTA: este modal ahora sirve tanto para crear como para editar.
+// `updateProducto` se importa de productService.js — si ese archivo no
+// tiene todavía esa función, agrégale algo como:
+//
+//   export const updateProducto = (id, data) =>
+//       axiosInstance.put(`/productos/${id}`, data);
+//
+// (ajusta el método/endpoint al que realmente use tu backend; lo hice
+// simétrico a como ya usan `deleteProducto(id)` y `createProducto(data)`).
+// -----------------------------------------------------------------------
+
+const VALORES_INICIALES = {
+    nombre: "",
+    descripcion: "",
+    categoria: "",
+    precio: "",
+    stock: "",
+    requiereTermino: false,
+    permiteObservaciones: false,
+};
 
 export default function ProductModal({
     open,
     handleClose,
+    producto,
+    onSuccess,
 }) {
+
+    const esEdicion = Boolean(producto?.id);
 
     const [requiereTermino, setRequiereTermino] = useState(false);
     const [permiteObservaciones, setPermiteObservaciones] = useState(false);
@@ -33,38 +59,89 @@ export default function ProductModal({
     const [precio, setPrecio] = useState("");
     const [stock, setStock] = useState("");
 
+    const [guardando, setGuardando] = useState(false);
+
+    // Cada vez que se abre el modal, precarga los datos del producto a
+    // editar (o limpia el formulario si es uno nuevo).
+    useEffect(() => {
+
+        if (!open) return;
+
+        if (producto) {
+
+            setNombre(producto.nombre ?? "");
+            setDescripcion(producto.descripcion ?? "");
+            setCategoria(producto.categoria ?? "");
+            setPrecio(producto.precio ?? "");
+            setStock(producto.stock ?? "");
+            setRequiereTermino(Boolean(producto.requiere_termino));
+            setPermiteObservaciones(Boolean(producto.permite_observaciones));
+
+        } else {
+
+            setNombre(VALORES_INICIALES.nombre);
+            setDescripcion(VALORES_INICIALES.descripcion);
+            setCategoria(VALORES_INICIALES.categoria);
+            setPrecio(VALORES_INICIALES.precio);
+            setStock(VALORES_INICIALES.stock);
+            setRequiereTermino(VALORES_INICIALES.requiereTermino);
+            setPermiteObservaciones(VALORES_INICIALES.permiteObservaciones);
+
+        }
+
+        setImagen(null);
+
+    }, [open, producto]);
+
+    // Imagen ya guardada en el backend (si el producto trae alguno de
+    // estos campos). No sé cómo se llama exactamente el campo en tu API,
+    // así que reviso los nombres más comunes — dime cuál es el correcto
+    // si ninguno aplica.
+    const imagenExistenteUrl =
+        producto?.imagen_url ??
+        producto?.imagenUrl ??
+        producto?.imagen ??
+        producto?.foto ??
+        null;
 
     const guardarProducto = async () => {
 
         try {
 
-            await createProducto({
+            setGuardando(true);
 
+            const payload = {
                 nombre,
                 descripcion,
                 categoria,
                 precio,
                 stock,
-
-                tiempo_preparacion: 15,
-
+                tiempo_preparacion: producto?.tiempo_preparacion ?? 15,
                 requiere_termino: requiereTermino,
-
                 permite_observaciones: permiteObservaciones,
+                disponible: producto?.disponible ?? true,
+            };
 
-                disponible: true
+            if (esEdicion) {
+                await updateProducto(producto.id, payload);
+            } else {
+                await createProducto(payload);
+            }
 
-            });
-
-            alert("Producto creado correctamente");
-
-            handleClose();
+            if (onSuccess) {
+                onSuccess();
+            } else {
+                handleClose();
+            }
 
         } catch (error) {
 
             console.error(error);
+            alert(esEdicion ? "Error al actualizar" : "Error al guardar");
 
-            alert("Error al guardar");
+        } finally {
+
+            setGuardando(false);
 
         }
 
@@ -74,20 +151,21 @@ export default function ProductModal({
         <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
 
             <DialogTitle>
-
-                Nuevo Producto
-
+                {esEdicion ? "Editar producto" : "Nuevo producto"}
             </DialogTitle>
 
             <DialogContent>
 
                 <Grid container spacing={2} mt={1}>
-                    <TextField
-                        label="Nombre"
-                        fullWidth
-                        value={nombre}
-                        onChange={(e) => setNombre(e.target.value)}
-                    />
+
+                    <Grid size={{ xs: 12 }}>
+                        <TextField
+                            label="Nombre"
+                            fullWidth
+                            value={nombre}
+                            onChange={(e) => setNombre(e.target.value)}
+                        />
+                    </Grid>
 
                     <Grid size={{ xs: 12, md: 6 }}>
                         <TextField
@@ -124,14 +202,6 @@ export default function ProductModal({
                         />
                     </Grid>
 
-                    {/* <Grid size={{ xs: 12, md: 6 }}>
-                        <TextField
-                            label="Tiempo de preparación (min)"
-                            type="number"
-                            fullWidth
-                        />
-                    </Grid> */}
-
                     <Grid size={{ xs: 12 }}>
                         <TextField
                             multiline
@@ -142,14 +212,12 @@ export default function ProductModal({
                             onChange={(e) => setDescripcion(e.target.value)}
                         />
                     </Grid>
-                    <Divider sx={{ my: 2 }} />
+
+                    <Divider sx={{ my: 2, width: "100%" }} />
 
                     <Grid size={{ xs: 12 }}>
 
-                        <Typography
-                            variant="h6"
-                            mb={2}
-                        >
+                        <Typography variant="h6" mb={2}>
                             Imagen del Producto
                         </Typography>
 
@@ -167,49 +235,54 @@ export default function ProductModal({
                             }}
                         >
 
-                            {
-                                imagen ? (
+                            {imagen ? (
 
-                                    <img
-                                        src={URL.createObjectURL(imagen)}
-                                        alt="Producto"
-                                        style={{
-                                            width: "100%",
-                                            height: "100%",
-                                            objectFit: "cover",
-                                        }}
-                                    />
+                                <img
+                                    src={URL.createObjectURL(imagen)}
+                                    alt="Producto"
+                                    style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        objectFit: "cover",
+                                    }}
+                                />
 
-                                ) : (
+                            ) : imagenExistenteUrl ? (
 
-                                    <Typography color="gray">
+                                <img
+                                    src={imagenExistenteUrl}
+                                    alt="Producto"
+                                    style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        objectFit: "cover",
+                                    }}
+                                />
 
-                                        Sin imagen
+                            ) : (
 
-                                    </Typography>
+                                <Typography color="gray">
+                                    Sin imagen
+                                </Typography>
 
-                                )
-                            }
+                            )}
 
                         </Box>
 
+                        Seleccionar Imagen
 
-                            Seleccionar Imagen
-
-                            <ProductImage
-                                imagen={imagen}
-                                setImagen={setImagen}
-                            />
-
+                        <ProductImage
+                            imagen={imagen}
+                            setImagen={setImagen}
+                        />
 
                     </Grid>
 
-                    <Typography
-                        variant="h6"
-                        fontWeight="bold"
-                    >
-                        Configuración del Producto
-                    </Typography>
+                    <Grid size={{ xs: 12 }}>
+                        <Typography variant="h6" fontWeight="bold">
+                            Configuración del Producto
+                        </Typography>
+                    </Grid>
 
                     <Grid size={{ xs: 12 }}>
                         <FormControlLabel
@@ -223,32 +296,28 @@ export default function ProductModal({
                         />
                     </Grid>
 
-                    {
-                        permiteObservaciones && (
+                    {permiteObservaciones && (
 
-                            <Grid size={{ xs: 12 }}>
+                        <Grid size={{ xs: 12 }}>
 
-                                <Typography
-                                    fontWeight="bold"
-                                    mb={2}
-                                >
-                                    Ejemplos de observaciones
-                                </Typography>
+                            <Typography fontWeight="bold" mb={2}>
+                                Ejemplos de observaciones
+                            </Typography>
 
-                                <TextField
-                                    fullWidth
-                                    multiline
-                                    rows={4}
-                                    placeholder={`Sin cebolla
+                            <TextField
+                                fullWidth
+                                multiline
+                                rows={4}
+                                placeholder={`Sin cebolla
 Extra queso
 Sin tomate
 Poco picante`}
-                                />
+                            />
 
-                            </Grid>
+                        </Grid>
 
-                        )
-                    }
+                    )}
+
                     <Grid size={{ xs: 12 }}>
                         <FormControlLabel
                             control={
@@ -263,10 +332,7 @@ Poco picante`}
 
                     {requiereTermino && (
                         <Grid size={{ xs: 12 }}>
-                            <Typography
-                                fontWeight="bold"
-                                mb={2}
-                            >
+                            <Typography fontWeight="bold" mb={2}>
                                 Términos disponibles
                             </Typography>
 
@@ -300,14 +366,20 @@ Poco picante`}
 
             <DialogActions>
 
-                <Button onClick={handleClose}>
+                <Button onClick={handleClose} disabled={guardando}>
                     Cancelar
                 </Button>
+
                 <Button
                     variant="contained"
                     onClick={guardarProducto}
+                    disabled={guardando}
                 >
-                    Guardar
+                    {guardando
+                        ? "Guardando…"
+                        : esEdicion
+                            ? "Guardar cambios"
+                            : "Guardar"}
                 </Button>
 
             </DialogActions>
@@ -315,4 +387,3 @@ Poco picante`}
         </Dialog>
     );
 }
-

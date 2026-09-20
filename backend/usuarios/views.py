@@ -24,7 +24,7 @@ def generar_codigo():
 
         codigo = "".join(
             secrets.choice(caracteres)
-            for _ in range(6)
+            for _ in range(4)
         )
 
         if not Mesero.objects.filter(codigo=codigo).exists():

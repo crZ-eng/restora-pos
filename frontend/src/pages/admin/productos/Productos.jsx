@@ -876,7 +876,7 @@ export default function Productos() {
                         display: "flex",
                         flexWrap: "wrap",
                         alignItems: "center",
-                        gap: 1.5
+                        gap: 1.5,
                     }}
                 >
 
@@ -1326,6 +1326,7 @@ export default function Productos() {
                                         mb: 1.25,
                                         borderRadius:
                                             2,
+
                                         backgroundColor:
                                             "rgba(255,255,255,0.05)"
                                     }}
@@ -1473,22 +1474,19 @@ export default function Productos() {
                                 },
 
                                 "& table": {
-                                    color:
-                                        COLOR.texto
+                                    color: COLOR.texto
                                 },
 
                                 "& th": {
-                                    color:
-                                        COLOR.textoSuave,
-                                    borderColor:
-                                        COLOR.borde
+                                    color: COLOR.textoSuave,
+                                    backgroundColor: COLOR.superficie,
+                                    borderColor: COLOR.borde
                                 },
 
                                 "& td": {
-                                    color:
-                                        COLOR.texto,
-                                    borderColor:
-                                        COLOR.borde
+                                    color: COLOR.texto,
+                                    backgroundColor: COLOR.superficie,
+                                    borderColor: COLOR.borde
                                 }
                             }}
                         >
