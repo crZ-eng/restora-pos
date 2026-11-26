@@ -26,6 +26,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import RestaurantIcon from "@mui/icons-material/Restaurant";
 
 import { getProductos } from "../../services/productService";
+import { createPedido } from "../../services/orderService";
 
 // -----------------------------------------------------------------------
 // Datos fijos: no dependen del estado del componente, por eso SÍ pueden
@@ -167,10 +168,19 @@ export default function Mesero() {
         if (!mesaSeleccionada || comanda.length === 0) return;
 
         setErrorEnvio("");
-
         try {
-            // TODO: reemplazar por la llamada real, por ejemplo:
-            // await crearPedido({ mesa: mesaSeleccionada.id, items: comanda });
+            // Build payload for backend
+            const payload = {
+                mesa: mesaSeleccionada.id,
+                items: comanda.map(item => ({
+                    producto: item.productoId,
+                    cantidad: item.cantidad,
+                    termino: item.termino,
+                    observaciones: item.observaciones,
+                })),
+            };
+            // Send to backend
+            await createPedido(payload);
 
             setMostrarConfirmacion(true);
             setMesas((prev) =>
@@ -186,6 +196,7 @@ export default function Mesero() {
             setErrorEnvio("No se pudo enviar la comanda. Intenta de nuevo.");
         }
     }
+
 
     function cerrarSesion() {
         localStorage.removeItem("access_token");
